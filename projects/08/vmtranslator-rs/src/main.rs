@@ -15,7 +15,7 @@ use std::collections::HashMap;
 fn base_name(filename: &str) -> &str {
     match filename.rfind(".") {
         Some(pos) => &filename[0..pos],
-        None =>  "tempfile.asm"
+        None =>  "tempfile"
     }
 }
 
@@ -332,7 +332,7 @@ const IFGOTO_ASM: &'static str ="
     AM=M-1
     D=M
     @{{LABEL}}
-    D;JGT
+    D;JNE
 ";
 
 const LABEL_ASM: &'static str = "
@@ -341,7 +341,7 @@ const LABEL_ASM: &'static str = "
 
 
 const FUNCTION_ASM: &'static str = "
-({{FILENAME}}.{{FUNCTION}})";
+({{FUNCTION}})";
 
 const FUNCTION_REPEAT_NARGS_ASM: &'static str= "
     @SP
@@ -352,6 +352,7 @@ const FUNCTION_REPEAT_NARGS_ASM: &'static str= "
 
 
 const RETURN_ASM : &'static str = "
+    //return
     //R13 = *(LCL-5)
     @LCL
     D=M
@@ -407,6 +408,82 @@ const RETURN_ASM : &'static str = "
     A=M
     0;JMP";
 
+
+const CALL_ASM :&'static str = "
+    //push return address
+    @{{RETURN_ADDRESS}}
+    D=A
+    @SP
+    A=M
+    M=D
+    @SP
+    M=M+1
+    //push LCL
+    @LCL
+    D=M
+    @SP
+    A=M
+    M=D
+    @SP
+    M=M+1
+    //push ARG
+    @ARG
+    D=M
+    @SP
+    A=M
+    M=D
+    @SP
+    M=M+1
+    //push THIS
+    @THIS
+    D=M
+    @SP
+    A=M
+    M=D
+    @SP
+    M=M+1
+    //push THAT
+    @THAT
+    D=M
+    @SP
+    A=M
+    M=D
+    @SP
+    M=M+1
+    //ARG=SP-NUM
+    //NUM=nARGS+5, determined by compile time
+    @{{NUM}}
+    D=A
+    @SP
+    D=M-D
+    @ARG
+    M=D
+    //LCL=SP
+    @SP
+    D=M
+    @LCL
+    M=D
+    //goto G
+    @{{G}}
+    0;JMP
+({{RETURN_ADDRESS}})";
+
+//SP=256
+//PUSH return address
+//PUSH LCL
+//PUSH ARG
+//PUSH THIS
+//PUSH THAT so SP=256+5
+//goto Sys.init
+const BOOTSTRAP_ASM : &'static str = "
+    @261
+    D=A
+    @SP
+    M=D
+    @Sys.init
+    0;JMP
+";
+
 struct CodeWriter<'a> {
     target_file : &'a File,
     filename: String,
@@ -415,7 +492,14 @@ struct CodeWriter<'a> {
     //eq,gt,lt's translation needs a label to jump
     //each jump has an uniq lable, inscrease cmp_count every time when translating eq,gt,lt
     cmp_counter: u32,
-    current_function: String
+
+    //Special Symbols in VM Programs
+    //label => filename.functionname$label
+    //function => filename.functionname
+    //functionname$ret.i => filename.functionname$ret.i 
+    //one such symbol should be generated for each call within functionname
+    current_function: String,
+    call_numbers_in_current_function: u32,
 }
 
 impl<'a> CodeWriter<'a> {
@@ -424,7 +508,8 @@ impl<'a> CodeWriter<'a> {
                                 literal_map: HashMap::new(),
                                 operator_map: HashMap::new(),
                                 cmp_counter:0,
-                                current_function: String::from("")
+                                current_function: String::from(""),
+                                call_numbers_in_current_function:0
                                 };
 
         cw.literal_map.insert(String::from("this"), String::from("THIS"));
@@ -563,30 +648,47 @@ impl<'a> CodeWriter<'a> {
             },
             CommandType::C_GOTO => {
                 s = String::from(GOTO_ASM);
-                s = s.replace("{{LABEL}}", &cmd.arg1);
-
+                let local_label = format!("{}${}",self.current_function, &cmd.arg1);
+                s = s.replace("{{LABEL}}", &local_label);
             }, 
             CommandType::C_IF => {
                 s = String::from(IFGOTO_ASM);
-                s = s.replace("{{LABEL}}", &cmd.arg1);
+                let local_label = format!("{}${}",self.current_function, &cmd.arg1);
+                s = s.replace("{{LABEL}}", &local_label);
             },
             CommandType::C_LABEL => {
                 s = String::from(LABEL_ASM);
-                let local_label = format!("{}{}", self.current_function, cmd.arg1);
+                let local_label = format!("{}${}",self.current_function, cmd.arg1);
                 s = s.replace("{{LABEL}}", &local_label);
             },
             CommandType::C_FUNCTION => {
                 s = String::from(FUNCTION_ASM);
-                let local_filename = stem_name(base_name(&self.filename));
-                s = s.replace("{{FILENAME}}", local_filename);
                 s = s.replace("{{FUNCTION}}", &cmd.arg1);
-                println!("{}", cmd.arg2);
                 for i in 0..cmd.arg2 {
                     s.push_str(FUNCTION_REPEAT_NARGS_ASM);
                 }
+                /* reset function name and funciton$ret counter */
                 self.current_function = cmd.arg1.to_string();
+                self.call_numbers_in_current_function = 0;
             },
             CommandType::C_CALL => {
+                s = String::from(CALL_ASM);
+                let local_filename = stem_name(base_name(&self.filename));
+                //NOTE: self.current_function should only be functionname
+                //RETURN_ADDRESS
+                let return_address = format!("{}$ret.{}", self.current_function, 
+                                            self.call_numbers_in_current_function);
+
+                //NOTE: format of callee_address shouble be filename.functionname
+                let callee_address :&str = &cmd.arg1;      //G
+
+                //NUM 
+                let num = (cmd.arg2 + 5).to_string(); //NUM
+                self.call_numbers_in_current_function += 1;
+
+                s = s.replace("{{RETURN_ADDRESS}}", &return_address);
+                s = s.replace("{{G}}", callee_address);
+                s = s.replace("{{NUM}}", &num);
 
             },
             CommandType::C_RETURN => {
@@ -642,13 +744,32 @@ fn main() {
     }
 
 
-    let target_file_name = format!("{}.{}", base_name(filename), "asm");
+    let target_file_name :String;
+    if is_diretory {
+        //strip the last /
+        let mut dirname :&str = filename;
+        if filename.ends_with("/") {
+            dirname = &filename[0..(filename.len()-1)];
+        }
+        target_file_name = format!("{}/{}.{}", dirname, stem_name(dirname), "asm");
+    } else {
+        target_file_name = format!("{}.{}", base_name(filename), "asm");
+    }
+    println!("Writing {}", target_file_name);
 
-    let target_file = OpenOptions::new()
+    let mut target_file = OpenOptions::new()
                             .create(true)
                             .write(true)
                             .truncate(true)
                             .open(target_file_name).unwrap();
+                        
+
+    //if input is a direcotry, we need bootstrap code 
+    if is_diretory {
+        //target_file.write(&BOOTSTRAP_ASM);
+        write!(target_file, "{}", BOOTSTRAP_ASM).expect("can not write to target file");
+        //target_file.write(BOOTSTRAP_ASM.as_bytes());
+    }
 
     for f in &vm_files {
         let fd = &f.0;
@@ -663,11 +784,4 @@ fn main() {
             code_writer.write_asm(cmd);
         }
     }
-
-//    parser.process(&vm_files);
-
-
-
-
-    //iterate each vm command to translate into hack language
 }
