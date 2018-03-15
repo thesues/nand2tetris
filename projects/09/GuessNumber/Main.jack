@@ -1,0 +1,56 @@
+class Main {
+   function void main() {
+      var boolean quit;
+      var int number;
+      var int answer;
+      var int seedCounter;
+      var char key;
+
+      do Output.printString("I got a number from 0 ~ 50, guess it");
+      do Output.println();
+      do Output.printString("press enter to start");
+
+      let quit = false;
+      let seedCounter = 11;
+
+
+      /* update the seed while waiting for answer */
+      while(~quit) {
+	
+	do Random.setSeed(seedCounter);
+	let seedCounter = seedCounter + 1;
+	let key = Keyboard.keyPressed();
+	do Output.printInt(key);
+	if (key = 128) {
+	   do Output.printString("Game started!!");
+	   do Output.println();
+	   let quit = true;
+	}
+	do Sys.wait(100);
+      }
+
+      let number = Random.randRange(50);
+
+      let quit = false;
+      while (~quit) {
+      	let answer = Keyboard.readInt("Guess a number:");
+
+	if (answer > number) {
+	   do Output.printString("Your answer it too big");
+	}
+
+	if (answer <  number) {
+	   do Output.printString("Your answer it too small");
+	}
+	
+	if (answer = number) {
+	   do Output.printString("Corret!");
+	   let quit = true;
+	}
+	do Output.println();
+
+      }
+
+      return;
+   }
+}
