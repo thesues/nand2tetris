@@ -20,7 +20,6 @@ class Main {
 	do Random.setSeed(seedCounter);
 	let seedCounter = seedCounter + 1;
 	let key = Keyboard.keyPressed();
-	do Output.printInt(key);
 	if (key = 128) {
 	   do Output.printString("Game started!!");
 	   do Output.println();
@@ -33,6 +32,14 @@ class Main {
 
       let quit = false;
       while (~quit) {
+	
+/*
+        if (Helper.isScreenFull()) {
+	      do Screen.clearScreen();
+	      do Output.moveCuror(0, 0);
+	}
+*/
+
       	let answer = Keyboard.readInt("Guess a number:");
 
 	if (answer > number) {

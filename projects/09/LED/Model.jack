@@ -1,0 +1,126 @@
+class Model {
+	field Array model;
+	field int size;
+	field int current_location;
+
+	constructor Model new(Array array, int arraysize) {
+		var int i;
+		let size = arraysize;
+		let current_location = 0;
+		let model = Array.new(arraysize);
+		while (i < size) {
+			let model[i] = array[i];
+			let i = i + 1;
+		}
+		return this;
+	}
+
+	method void draw(int location) {
+		var int i;
+		var int memAddress;
+		var int pos;
+		let memAddress = 16384 + location; let i = 0;
+		while (i < size) {
+			let pos = memAddress + (i * 32);
+			if (pos < (16384 + (256 * 32)) & pos > 16383) {
+				do Memory.poke(pos , model[i]);
+			}
+			let i = i + 1;
+		}
+		let current_location = location;
+		return;
+	}
+        
+        method void erase() {
+		var int i;
+		var int memAddress;
+		var int pos;
+		let memAddress = 16384 + current_location;
+		while (i < size) {
+			let pos = memAddress + (i * 32);
+			if (pos < (16384 + (256 * 32)) & pos > 16383) {
+				do Memory.poke(pos, 0);
+		        }
+			let i = i + 1;
+		}
+		return;
+	}
+
+      /*
+	0 => up
+        1 => down
+        2 => left
+	3 => right
+
+      */
+      method void moveByBlock(int blocks, int direction) {
+	 //remove current shape
+	 do erase();
+
+	 //do draw(current_location + (32 * size) * blocks);
+	 //up
+	 if ( direction = 0 ) {
+		do draw(current_location - ((32 * size) * blocks));
+	 }
+         //down
+	 if (direction = 1) {
+	 	do draw(current_location + (32 * size) * blocks);
+	 }
+	 //left
+         if (direction = 2) {
+	 	do draw(current_location - ((size * blocks)/16));
+	 } 
+	 //right
+         if (direction = 3) {
+		do draw(current_location + ((size * blocks)/16));
+	 }
+	
+	 return;
+      }	
+
+
+       method void dispose() {
+		do Memory.deAlloc(model);
+      		do Memory.deAlloc(this);
+      		return;
+       }
+
+       //https://en.wikipedia.org/wiki/Pixel-art_scaling_algorithms#EPX/Scale2%C3%97/AdvMAME2%C3%97
+       //(i,j,p) => new (i, j, p)
+       //_1 => (i,   (j*16 +p)*2/16, (j*16+p)*2%16)
+       //_2 => (i,   (j*16 +p)*2/16, (j*16+p)*2%16 + 1)
+       //_3 => (i+1, (j*16 +p)*2/16, (j*16+p)*2%16)
+       //_4 => (i+1, (j*16 +p)*2/16, (j*16+p)*2%16 + 1)
+       method void scale2x() {
+		var int new_length;
+		var int origin_length;
+		var int origin_i, origin_j;
+		var int new_i, new_j;
+		var int new_row, new_column, origin_row, origin_column;
+		var Array new_array;
+
+		var int A,B,C,D,P;
+
+		let new_length = (4 * size * size) /16;
+		let new_array = Array.new(new_length);
+
+		let origin_row = size;
+		let origin_column = size/16;
+		let new_row = 2 * size;
+		let new_column = new_row/16;
+
+		let origin_i = 0;
+		let origin_j = 0;
+
+		let new_i = 0;
+		let new_j = 0;
+
+		while ( origin_i < origin_row) {
+			while (origin_j < origin_column) {
+				//loop for every bit
+				//model[origin_row * origin_column + origin_j]
+			}
+		}
+		return;
+       }
+}

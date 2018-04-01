@@ -1,0 +1,7 @@
+[package]
+name = "jackanalyzer-rs"
+version = "0.1.0"
+authors = ["Dongmao Zhang <deanraccoon@gmail.com>"]
+
+[dependencies]
+regex = "0.2"

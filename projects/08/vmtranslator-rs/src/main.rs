@@ -673,7 +673,6 @@ impl<'a> CodeWriter<'a> {
             },
             CommandType::C_CALL => {
                 s = String::from(CALL_ASM);
-                let local_filename = stem_name(base_name(&self.filename));
                 //NOTE: self.current_function should only be functionname
                 //RETURN_ADDRESS
                 let return_address = format!("{}$ret.{}", self.current_function, 
