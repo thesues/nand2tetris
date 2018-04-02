@@ -396,17 +396,17 @@ impl JackAnalyzer {
 
     fn compile_class(&mut self) {
 
-        println!("<class>");
+        writeln!(self.target_file,"<class>");
         //need macro to simplifiy the code
         let valid_token = self.eat(jack!(KEYWORD:"class")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //let valid_token = self.eat(vec![TokenType::SYMBOL("{".to_string())]).unwrap();
         let valid_token = self.eat(jack!(SYMBOL:"{")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //0 or * class var declares
         while self.compile_class_var_dec(){};
@@ -417,8 +417,8 @@ impl JackAnalyzer {
         while self.compile_subroutine(){};
 
         let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
-        println!("{}", valid_token);
-        println!("</class>");
+        writeln!(self.target_file,"{}", valid_token);
+        writeln!(self.target_file,"</class>");
     }
 
     //  classVarDec*
@@ -430,16 +430,16 @@ impl JackAnalyzer {
             Some(valid_token) => valid_token,
             None => {return false}
         };
-        println!("<classVarDec>");
-        println!("{}", valid_token);
+        writeln!(self.target_file,"<classVarDec>");
+        writeln!(self.target_file,"{}", valid_token);
 
         //type
         let valid_token = self.eat(jack!(KEYWORD:"int", KEYWORD:"char", KEYWORD:"boolean", IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file,"{}", valid_token);
 
         //varname
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file,"{}", valid_token);
 
         //(, varname)*
         loop {
@@ -447,16 +447,16 @@ impl JackAnalyzer {
                 Some(valid_token) => valid_token,
                 None => {break;}
             }; 
-            println!("{}", valid_token);
+            writeln!(self.target_file,"{}", valid_token);
 
             let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-            println!("{}", valid_token);
+            writeln!(self.target_file,"{}", valid_token);
         }
 
         let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file,"{}", valid_token);
 
-        println!("</classVarDec>");
+        writeln!(self.target_file,"</classVarDec>");
         true
     }
 
@@ -466,39 +466,39 @@ impl JackAnalyzer {
             Some(valid_token) => valid_token,
             None => {return false}
         };
-        println!("<subroutineDec>");
-        println!("{}", valid_token);
+        writeln!(self.target_file, "<subroutineDec>");
+        writeln!(self.target_file, "{}", valid_token);
 
         //void , type => int, boolean, char, ident
         let valid_token = self.eat(jack!(KEYWORD:"void", KEYWORD:"int", KEYWORD:"boolean", KEYWORD:"char", IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //subroutine name
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //symbol '('
         let valid_token = self.eat(jack!(SYMBOL:"(")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //one parameter list or none
         self.compile_parameter_list();
 
         //symbol ')'
         let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_subroutine_body();
 
-        println!("</subroutineDec>");
+        writeln!(self.target_file, "</subroutineDec>");
         true
     }
 
     fn compile_subroutine_body(&mut self) {
-        println!("{}", "<subroutineBody>");
+        writeln!(self.target_file, "{}", "<subroutineBody>");
         //symbol '{'
         let valid_token = self.eat(jack!(SYMBOL:"{")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         while self.compile_var_dec() {}
@@ -507,26 +507,26 @@ impl JackAnalyzer {
 
         //symbol '}'
         let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
-        println!("{}", valid_token);
-        println!("{}", "</subroutineBody>");
+        writeln!(self.target_file, "{}", valid_token);
+        writeln!(self.target_file, "{}", "</subroutineBody>");
 
     }
     fn compile_parameter_list(&mut self) {
         //type
-        println!("<parameterList>");
+        writeln!(self.target_file, "<parameterList>");
         let valid_token = match self.eat(jack!(KEYWORD:"void", KEYWORD:"int", 
                                          KEYWORD:"boolean", KEYWORD:"char", IDENTIFIER:"")) { 
             Some(valid_token) => valid_token,
             None => {
-                println!("</parameterList>");
+                writeln!(self.target_file, "</parameterList>");
                 return;
             }
         };
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //varname
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //(, type varname)
         loop {
@@ -535,17 +535,17 @@ impl JackAnalyzer {
                 Some(valid_token) => valid_token,
                 None => {break;}
             };
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
 
             //type
             let valid_token = self.eat(jack!(KEYWORD:"void", KEYWORD:"int",
                                             KEYWORD:"boolean", KEYWORD:"char", IDENTIFIER:"")).unwrap();
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
 
             let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
         }
-        println!("</parameterList>");
+        writeln!(self.target_file, "</parameterList>");
 
     }
 
@@ -555,17 +555,17 @@ impl JackAnalyzer {
             Some(valid_token) => valid_token,
             None => {return false;}
         };
-        println!("{}", "<varDec>");
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", "<varDec>");
+        writeln!(self.target_file, "{}", valid_token);
 
         //type
         let valid_token = self.eat(jack!(KEYWORD:"void", KEYWORD:"int",
                                         KEYWORD:"boolean", KEYWORD:"char", IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //varName
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         loop {
             //,
@@ -573,24 +573,24 @@ impl JackAnalyzer {
                 Some(valid_token) => valid_token,
                 None => {break;}
             };
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
 
             //varname
             let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
         }
 
         //;
         let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
-        println!("{}", "</varDec>");
+        writeln!(self.target_file, "{}", "</varDec>");
         true
     }
 
     fn compile_statements(&mut self ) {
 
-        println!("{}","<statements>");
+        writeln!(self.target_file, "{}","<statements>");
 
         loop {
             let x :u8;
@@ -617,145 +617,145 @@ impl JackAnalyzer {
             }
         }
 
-        println!("{}","</statements>");
+        writeln!(self.target_file, "{}","</statements>");
     }
 
     fn compile_if_statement(&mut self) {
 
 
-        println!("{}", "<ifStatement>");
+        writeln!(self.target_file, "{}", "<ifStatement>");
         let valid_token = self.eat(jack!(KEYWORD:"if")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         let valid_token = self.eat(jack!(SYMBOL:"(")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         self.compile_expression();
 
         let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         let valid_token = self.eat(jack!(SYMBOL:"{")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_statements();
 
         let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         //does it have else?
         match self.eat(jack!(KEYWORD:"else")) {
             None => {
-                println!("{}", "</ifStatement>");
+                writeln!(self.target_file, "{}", "</ifStatement>");
                 return
             },
             Some(valid_token) => {
-                println!("{}", valid_token)
+                writeln!(self.target_file, "{}", valid_token);
             }
         }
 
         let valid_token = self.eat(jack!(SYMBOL:"{")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_statements();
 
         let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
-        println!("{}", valid_token);
-        println!("{}", "</ifStatement>");
+        writeln!(self.target_file, "{}", valid_token);
+        writeln!(self.target_file, "{}", "</ifStatement>");
 
     }
 
     fn compile_while_statement(&mut self) {
-        println!("{}", "<whileStatement>");
+        writeln!(self.target_file, "{}", "<whileStatement>");
 
         let valid_token = self.eat(jack!(KEYWORD:"while")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         let valid_token = self.eat(jack!(SYMBOL:"(")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_expression();
 
         let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         let valid_token = self.eat(jack!(SYMBOL:"{")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_statements();
 
         let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
-        println!("{}", valid_token);
-        println!("{}", "</whileStatement>");
+        writeln!(self.target_file, "{}", valid_token);
+        writeln!(self.target_file, "{}", "</whileStatement>");
 
     }
 
     fn compile_do_statement(&mut self) {
-        println!("{}", "<doStatement>");
+        writeln!(self.target_file, "{}", "<doStatement>");
 
         //do
         let valid_token = self.eat(jack!(KEYWORD:"do")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         self.compile_subroutine_call();
 
         //;
         let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
-        println!("{}", "</doStatement>");
+        writeln!(self.target_file, "{}", "</doStatement>");
 
     }
 
     fn compile_let_statement(&mut self) {
-        println!("{}", "<letStatement>");
+        writeln!(self.target_file, "{}", "<letStatement>");
 
         //let
         let valid_token = self.eat(jack!(KEYWORD:"let")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         //ident
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         match self.eat(jack!(SYMBOL:"[")) {
             Some(valid_token) => {
                 //[
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
 
                 self.compile_expression();
 
                 //]
                 let valid_token = self.eat(jack!(SYMBOL:"]")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
             },
             None=>{}
         }
 
         //=
         let valid_token = self.eat(jack!(SYMBOL:"=")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
         self.compile_expression();
 
         //;
         let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
-        println!("{}", "</letStatement>")
+        writeln!(self.target_file, "{}", "</letStatement>");
     }
 
     fn compile_return_statement(&mut self) {
         //return
-        println!("{}", "<returnStatement>");
+        writeln!(self.target_file, "{}", "<returnStatement>");
 
         let valid_token = self.eat(jack!(KEYWORD:"return")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
 
 
@@ -769,31 +769,31 @@ impl JackAnalyzer {
         }
 
         let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
-        println!("{}", "</returnStatement>");
+        writeln!(self.target_file, "{}", "</returnStatement>");
     }
 
     fn compile_expression(&mut self) {
         //START FROM HERE;
-        println!("{}","<expression>");
+        writeln!(self.target_file, "{}","<expression>");
         self.compile_term();
         loop {
             match self.eat(jack!(SYMBOL:"+", SYMBOL:"-", SYMBOL:"*", SYMBOL:"/",
                         SYMBOL:"&", SYMBOL:"|", SYMBOL:">", SYMBOL:"<", SYMBOL:"=")) {
-                            Some(ref s) => println!("{}", s),
+                            Some(ref s) => {writeln!(self.target_file, "{}", s);},
                             None => break
                         }
             
             self.compile_term();
         }
-        println!("{}","</expression>");
+        writeln!(self.target_file, "{}","</expression>");
     }
 
     //https://stackoverflow.com/questions/42075409/drop-a-immutable-borrow-to-make-a-mutable-borrow
     fn compile_term(&mut self) {
         //the eat function can not fit the needs
-        println!("{}", "<term>");
+        writeln!(self.target_file, "{}", "<term>");
 
         let peek_token = self.peek(0).unwrap().clone();
 
@@ -803,57 +803,57 @@ impl JackAnalyzer {
                 let peek_token1 = self.peek(1).unwrap().clone();
                 match peek_token1 {
                     TokenType::SYMBOL(ref s) if s == "[" => {
-                        println!("{}", peek_token);
+                        writeln!(self.target_file, "{}", peek_token);
                         self.eat_force();
-                        println!("{}", peek_token1);
+                        writeln!(self.target_file, "{}", peek_token1);
                         self.eat_force();
                         self.compile_expression();
                         let valid_token = self.eat(jack!(SYMBOL:"]")).unwrap();
-                        println!("{}", valid_token);
+                        writeln!(self.target_file, "{}", valid_token);
                     },
                     TokenType::SYMBOL(ref s) if (s == "(" || s == ".") => {
                         self.compile_subroutine_call();
                     }
                     _ => {
-                        println!("{}", peek_token);
+                        writeln!(self.target_file, "{}", peek_token);
                         self.eat_force();
                     }
                 }
             },
             TokenType::SYMBOL(ref s) if (s == "-" || s == "~") => {
-                println!("{}", peek_token);
+                writeln!(self.target_file, "{}", peek_token);
                 self.eat_force();
                 self.compile_term();
             },
             TokenType::INTEGER(ref s) => {
-                println!("{}", peek_token);
+                writeln!(self.target_file, "{}", peek_token);
                 self.eat_force();
             }
             TokenType::SYMBOL(ref s) if s == "(" => {
-                println!("{}", peek_token);
+                writeln!(self.target_file, "{}", peek_token);
                 self.eat_force();
                 self.compile_expression();
                 let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
             },
             TokenType::KEYWORD(ref s ) if (s == "true" || s == "false" || s == "null" || s == "this") => {
-                println!("{}", peek_token);
+                writeln!(self.target_file, "{}", peek_token);
                 self.eat_force();
             },
             TokenType::STRING(ref _s) => {
-                println!("{}", peek_token);
+                writeln!(self.target_file, "{}", peek_token);
                 self.eat_force();
             }
             _ => {
                 panic!("failed to parse");
             }
         } 
-        println!("{}", "</term>");
+        writeln!(self.target_file, "{}", "</term>");
     }
 
     fn compile_expression_list(&mut self) {
 
-        println!("{}", "<expressionList>");
+        writeln!(self.target_file, "{}", "<expressionList>");
 
 
         let is_expression_list_empty = match self.peek(0).unwrap() {
@@ -862,7 +862,7 @@ impl JackAnalyzer {
         };
 
         if is_expression_list_empty {
-            println!("{}", "</expressionList>");
+            writeln!(self.target_file, "{}", "</expressionList>");
             return;
         }
 
@@ -873,42 +873,42 @@ impl JackAnalyzer {
                 Some(s) => s,
                 None => {break}
             };
-            println!("{}", valid_token);
+            writeln!(self.target_file, "{}", valid_token);
             //expression
             self.compile_expression();
         }
 
-        println!("{}", "</expressionList>");
+        writeln!(self.target_file, "{}", "</expressionList>");
     }
 
     fn compile_subroutine_call(&mut self) {
         let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-        println!("{}", valid_token);
+        writeln!(self.target_file, "{}", valid_token);
 
         //next could be . or (
         let valid_token = self.eat(jack!(SYMBOL:".", SYMBOL:"(")).unwrap();
 
         match valid_token {
             TokenType::SYMBOL(ref s) if s == "(" => {
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
                 self.compile_expression_list();
                 let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
 
             },
             TokenType::SYMBOL(ref s) if s == "." => {
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
 
                 let valid_token = self.eat(jack!(IDENTIFIER:"")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
 
                 let valid_token = self.eat(jack!(SYMBOL:"(")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
 
                 self.compile_expression_list();
 
                 let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
-                println!("{}", valid_token);
+                writeln!(self.target_file, "{}", valid_token);
             },
             _ => {panic!("never will be herer")}
         }
