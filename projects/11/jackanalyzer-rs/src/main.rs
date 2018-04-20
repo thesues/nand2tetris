@@ -229,10 +229,8 @@ impl  JackTokenizer {
     }
 
 
-    fn add_to_list(vec: &mut Vec<Token>, filename: &str, t: TokenType) {
+    fn add_to_list(vec: &mut Vec<Token>, t: TokenType) {
         //print to xml
-
-
         vec.push( 
             Token{
                 token_type: t
@@ -285,7 +283,7 @@ impl  JackTokenizer {
 
             let mut string_pos: usize = 0;
 
-            enum parse_stat {
+            enum ParseStat {
                 STRING,
                 SYMBOL,
                 NUMBER,
@@ -294,44 +292,44 @@ impl  JackTokenizer {
                 NONE
             }
 
-            let mut previous_stat =  parse_stat::NONE;
+            let mut previous_stat =  ParseStat::NONE;
 
             for (pos, c) in first.chars().enumerate() {
                 //SYMBOL
                 if JackTokenizer::is_defined_symbol(c) {
                     match previous_stat {
-                        parse_stat::WORD => {
+                        ParseStat::WORD => {
                             let word =  &first[word_pos..pos as usize];
                             if JackTokenizer::is_keyword(word) {
-                                JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::KEYWORD(word.to_string()));
+                                JackTokenizer::add_to_list(&mut vec, TokenType::KEYWORD(word.to_string()));
                             } else {
-                                JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::IDENTIFIER(word.to_string()));
+                                JackTokenizer::add_to_list(&mut vec, TokenType::IDENTIFIER(word.to_string()));
                             }
                         },
-                        parse_stat::NUMBER => {
+                        ParseStat::NUMBER => {
                             let number :u16 = first[number_pos..pos].parse().unwrap();
-                            JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::INTEGER(number));
+                            JackTokenizer::add_to_list(&mut vec, TokenType::INTEGER(number));
                         },
-                        parse_stat::STRING => {
+                        ParseStat::STRING => {
                             continue;
                         }
                         _ => {}
                     }
-                    JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::SYMBOL(c.to_string()));
-                    previous_stat = parse_stat::SYMBOL;
+                    JackTokenizer::add_to_list(&mut vec, TokenType::SYMBOL(c.to_string()));
+                    previous_stat = ParseStat::SYMBOL;
                 }
 
                 //STRING
                 if c == '"' {
                     match previous_stat {
-                        parse_stat::STRING => {
+                        ParseStat::STRING => {
                             let s = first[(string_pos+1) as usize ..pos as usize].to_string();
-                            JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::STRING(s));
-                            previous_stat = parse_stat::NONE;
+                            JackTokenizer::add_to_list(&mut vec, TokenType::STRING(s));
+                            previous_stat = ParseStat::NONE;
                         },
                         _ => {
                             string_pos = pos;
-                            previous_stat = parse_stat::STRING;
+                            previous_stat = ParseStat::STRING;
                             continue;
                         }
 
@@ -343,17 +341,17 @@ impl  JackTokenizer {
                 //so this must be number
                 if c.is_numeric() {
                     match previous_stat {
-                        parse_stat::STRING => {
+                        ParseStat::STRING => {
                             continue;
                         },
-                        parse_stat::WORD => {
+                        ParseStat::WORD => {
                             continue;
                         },
-                        parse_stat::NUMBER => {
+                        ParseStat::NUMBER => {
                             continue;
                         }
                         _ => {
-                            previous_stat = parse_stat::NUMBER;
+                            previous_stat = ParseStat::NUMBER;
                             number_pos = pos;
                         }
                     }
@@ -362,17 +360,17 @@ impl  JackTokenizer {
                 /* a-z, A-Z, _*/
                 if c.is_alphabetic() || c == '_' {
                     match previous_stat {
-                        parse_stat::STRING => {
+                        ParseStat::STRING => {
                             continue;
                         },
-                        parse_stat::NONE | parse_stat::SPACE | parse_stat::SYMBOL => {
+                        ParseStat::NONE | ParseStat::SPACE | ParseStat::SYMBOL => {
                             word_pos = pos;
-                            previous_stat = parse_stat::WORD;
+                            previous_stat = ParseStat::WORD;
                         },
-                        parse_stat::NUMBER => {
+                        ParseStat::NUMBER => {
                             panic!("tokeniz wrong {}!", line);
                         },
-                        parse_stat::WORD => {
+                        ParseStat::WORD => {
                             continue;
                         }
                     }
@@ -380,25 +378,25 @@ impl  JackTokenizer {
 
                 if c.is_whitespace() {
                     match previous_stat {
-                        parse_stat::WORD => {
+                        ParseStat::WORD => {
                             let word =  &first[word_pos..pos as usize];
                             if JackTokenizer::is_keyword(word) {
-                                JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::KEYWORD(word.to_string()));
+                                JackTokenizer::add_to_list(&mut vec, TokenType::KEYWORD(word.to_string()));
                             } else {
-                                JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::IDENTIFIER(word.to_string()));
+                                JackTokenizer::add_to_list(&mut vec, TokenType::IDENTIFIER(word.to_string()));
                             }
-                            previous_stat = parse_stat::SPACE;
+                            previous_stat = ParseStat::SPACE;
                         },
-                        parse_stat::NONE | parse_stat::SPACE | parse_stat::SYMBOL => {
-                            previous_stat = parse_stat::SPACE;
+                        ParseStat::NONE | ParseStat::SPACE | ParseStat::SYMBOL => {
+                            previous_stat = ParseStat::SPACE;
                             continue;
                         },
-                        parse_stat::NUMBER=>{
+                        ParseStat::NUMBER=>{
                             let number :u16 = first[number_pos..pos].parse().unwrap();
-                            JackTokenizer::add_to_list(&mut vec, &self.filename, TokenType::INTEGER(number));
-                            previous_stat = parse_stat::SPACE;
+                            JackTokenizer::add_to_list(&mut vec, TokenType::INTEGER(number));
+                            previous_stat = ParseStat::SPACE;
                         },
-                        parse_stat::STRING=>{
+                        ParseStat::STRING=>{
                             //space is in the constant string
                             continue;
                         },
@@ -419,11 +417,11 @@ impl  JackTokenizer {
                         .truncate(true)
                         .open(target_file_name).unwrap();
 
-        writeln!(target_file, "<tokens>");
+        writeln!(target_file, "<tokens>").unwrap();
         for t in &self.vector {
-                writeln!(target_file, "{}", t.token_type);
+                writeln!(target_file, "{}", t.token_type).unwrap();
         }
-        writeln!(target_file, "</tokens>");
+        writeln!(target_file, "</tokens>").unwrap();
     }
 
     pub fn has_more_tokens(&self) -> bool{
@@ -559,7 +557,7 @@ impl JackAnalyzer {
 
         while self.compile_subroutine(){};
 
-        let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
+        self.eat(jack!(SYMBOL:"}")).unwrap();
     }
 
     //  classVarDec*
@@ -605,7 +603,7 @@ impl JackAnalyzer {
 
         //(, varname)*
         loop {
-            let valid_token = match self.eat(jack!(SYMBOL:",")) {
+            match self.eat(jack!(SYMBOL:",")) {
                 Some(valid_token) => valid_token,
                 None => {break;}
             }; 
@@ -619,7 +617,8 @@ impl JackAnalyzer {
 
         }
 
-        let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
+        //;
+        self.eat(jack!(SYMBOL:";")).unwrap();
         true
     }
 
@@ -661,13 +660,13 @@ impl JackAnalyzer {
         };
 
         //symbol '('
-        let valid_token = self.eat(jack!(SYMBOL:"(")).unwrap();
+        self.eat(jack!(SYMBOL:"(")).unwrap();
 
         //one parameter list or none
         self.compile_parameter_list();
 
         //symbol ')'
-        let valid_token = self.eat(jack!(SYMBOL:")")).unwrap();
+        self.eat(jack!(SYMBOL:")")).unwrap();
 
         self.compile_subroutine_body();
 
@@ -696,7 +695,7 @@ impl JackAnalyzer {
         self.compile_statements();
 
         //symbol '}'
-        let valid_token = self.eat(jack!(SYMBOL:"}")).unwrap();
+        self.eat(jack!(SYMBOL:"}")).unwrap();
 
     }
     fn compile_parameter_list(&mut self) {
@@ -730,7 +729,7 @@ impl JackAnalyzer {
         //(, type varname)
         loop {
             //,
-            let valid_token = match self.eat(jack!(SYMBOL:",")) {
+            match self.eat(jack!(SYMBOL:",")) {
                 Some(valid_token) => valid_token,
                 None => {break;}
             };
@@ -760,8 +759,8 @@ impl JackAnalyzer {
         let mut symbol_name :String;
         let symbol_type :String;
         //var
-        let valid_token = match self.eat(jack!(KEYWORD:"var")) {
-            Some(valid_token) => valid_token,
+        match self.eat(jack!(KEYWORD:"var")) {
+            Some(t) => {t},
             None => {return false;}
         };
 
@@ -785,7 +784,7 @@ impl JackAnalyzer {
         self.symbol_table.define(&symbol_name, &symbol_type, &VarSegment::VAR);
         loop {
             //,
-            let valid_token = match self.eat(jack!(SYMBOL:",")) {
+            match self.eat(jack!(SYMBOL:",")) {
                 Some(valid_token) => valid_token,
                 None => {break;}
             };
@@ -799,7 +798,7 @@ impl JackAnalyzer {
         }
 
         //;
-        let valid_token = self.eat(jack!(SYMBOL:";")).unwrap();
+        self.eat(jack!(SYMBOL:";")).unwrap();
 
         true
     }
@@ -813,20 +812,20 @@ impl JackAnalyzer {
             VarSegment::STATIC => "static",
             VarSegment::VAR => "local",
         };
-        writeln!(self.target_file, "push {} {}", seg, entry.number);
+        writeln!(self.target_file, "push {} {}", seg, entry.number).unwrap();
     }
 
 
     fn write_push_constant(&mut self, n :u32) {
-        writeln!(self.target_file, "push constant {}", n);
+        writeln!(self.target_file, "push constant {}", n).unwrap();
     }
 
     fn write_push_this(&mut self) {
-        writeln!(self.target_file, "push pointer 0");
+        writeln!(self.target_file, "push pointer 0").unwrap();
     }
 
     fn write_pop_this(&mut self) {
-        writeln!(self.target_file, "pop pointer 0");
+        writeln!(self.target_file, "pop pointer 0").unwrap();
     }
 
     fn write_pop(&mut self, entry :&SymbolEntry) {
@@ -837,21 +836,21 @@ impl JackAnalyzer {
             VarSegment::VAR => "local"
         };
         //writeln!(self.target_file_name, "pop {} {}", seg, entry.number);
-        writeln!(self.target_file, "pop {} {}", seg, entry.number);
+        writeln!(self.target_file, "pop {} {}", seg, entry.number).unwrap();
     }
 
     //op should be "ADD, SUB, NEG, EQ, GT, LT, AND, OR, NOT, *
     fn write_bin_arthimetic(&mut self, op :&str) {
         match op {
-            "+" => writeln!(self.target_file, "add"),
-            "-" => writeln!(self.target_file, "sub"),
-            "*" => writeln!(self.target_file, "call Math.multiply 2"),
-            "/" => writeln!(self.target_file, "call Math.divide 2"),
-            "&" => writeln!(self.target_file, "and"),
-            "|" => writeln!(self.target_file, "or"),
-            ">" => writeln!(self.target_file, "gt"),
-            "<" => writeln!(self.target_file, "lt"),
-            "=" => writeln!(self.target_file, "eq"),
+            "+" => writeln!(self.target_file, "add").unwrap(),
+            "-" => writeln!(self.target_file, "sub").unwrap(),
+            "*" => writeln!(self.target_file, "call Math.multiply 2").unwrap(),
+            "/" => writeln!(self.target_file, "call Math.divide 2").unwrap(),
+            "&" => writeln!(self.target_file, "and").unwrap(),
+            "|" => writeln!(self.target_file, "or").unwrap(),
+            ">" => writeln!(self.target_file, "gt").unwrap(),
+            "<" => writeln!(self.target_file, "lt").unwrap(),
+            "=" => writeln!(self.target_file, "eq").unwrap(),
             _ => panic!()
         };
 
@@ -859,66 +858,65 @@ impl JackAnalyzer {
 
     fn write_uni_arthimetic(&mut self, op :&str) {
         match op {
-            "~" => writeln!(self.target_file, "not"),
-            "-" => writeln!(self.target_file, "neg"),
+            "~" => writeln!(self.target_file, "not").unwrap(),
+            "-" => writeln!(self.target_file, "neg").unwrap(),
             _ => panic!()
         };
     }
 
 
     fn write_label(&mut self, label: &str) {
-        writeln!(self.target_file, "label {}", label);
+        writeln!(self.target_file, "label {}", label).unwrap();
 
     }
 
     fn write_goto(&mut self, label: &str) {
-        writeln!(self.target_file, "goto {}", label);
+        writeln!(self.target_file, "goto {}", label).unwrap();
 
     }
 
     fn write_if(&mut self, label: &str) {
-        writeln!(self.target_file, "if-goto {}", label);
+        writeln!(self.target_file, "if-goto {}", label).unwrap();
     }
 
 
-    fn write_call(&mut self, name: &str, nArgs: u32) {
-        writeln!(self.target_file, "call {} {}", name, nArgs);
+    fn write_call(&mut self, name: &str, n_args: u32) {
+        writeln!(self.target_file, "call {} {}", name, n_args).unwrap();
     }
 
-    fn write_function(&mut self, nVars: u32) {
+    fn write_function(&mut self, n_vars: u32) {
         match self.current_function_type.as_ref() {
             "method"      => {
-                writeln!(self.target_file, "function {} {}", self.current_function_name, nVars);
-                writeln!(self.target_file, "push argument 0");
-                writeln!(self.target_file, "pop pointer 0");
+                writeln!(self.target_file, "function {} {}", self.current_function_name, n_vars).unwrap();
+                writeln!(self.target_file, "push argument 0").unwrap();
+                writeln!(self.target_file, "pop pointer 0").unwrap();
 
             },
             _ => {
-                writeln!(self.target_file, "function {} {}", self.current_function_name, nVars);
-
+                writeln!(self.target_file, "function {} {}", self.current_function_name, n_vars).unwrap();
             },
         }
     }
 
     fn write_return(&mut self) {
-        writeln!(self.target_file, "return");
+        writeln!(self.target_file, "return").unwrap();
     }
 
     fn write_ignore_return_value(&mut self) {
-        writeln!(self.target_file, "pop temp 0");
+        writeln!(self.target_file, "pop temp 0").unwrap();
     }
 
 
     fn write_pop_array_value(&mut self) {
-        writeln!(self.target_file, "pop temp 0");
-        writeln!(self.target_file, "pop pointer 1");
-        writeln!(self.target_file, "push temp 0");
-        writeln!(self.target_file, "pop that 0");
+        writeln!(self.target_file, "pop temp 0").unwrap();
+        writeln!(self.target_file, "pop pointer 1").unwrap();
+        writeln!(self.target_file, "push temp 0").unwrap();
+        writeln!(self.target_file, "pop that 0").unwrap();
     }
 
     fn write_push_array_value(&mut self) {
-        writeln!(self.target_file, "pop pointer 1");
-        writeln!(self.target_file, "push that 0");
+        writeln!(self.target_file, "pop pointer 1").unwrap();
+        writeln!(self.target_file, "push that 0").unwrap();
     }
 
     fn compile_statements(&mut self ) {
@@ -988,8 +986,7 @@ impl JackAnalyzer {
                 self.write_label(&label_end);
                 return
             },
-            Some(valid_token) => {
-            }
+            Some(_) => {}
         }
 
         self.eat(jack!(SYMBOL:"{")).unwrap();
@@ -1063,7 +1060,7 @@ impl JackAnalyzer {
         let mut is_array = false;
 
         match self.eat(jack!(SYMBOL:"[")) {
-            Some(valid_token) => {
+            Some(_) => {
                 //[
                 is_array = true;
                 self.write_push(&symbol_entry);
@@ -1223,29 +1220,29 @@ impl JackAnalyzer {
 
     fn compile_expression_list(&mut self) -> u32 {
 
-        let mut nArgs :u32 = 0;
+        let mut n_args :u32 = 0;
         let is_expression_list_empty = match self.peek(0).unwrap() {
             &TokenType::SYMBOL(ref s) if s == ")" => true,
             _ => false
         };
 
         if is_expression_list_empty {
-            return nArgs;
+            return n_args;
         }
 
         self.compile_expression();
-        nArgs += 1;
+        n_args += 1;
         //,
         loop {
-            let valid_token = match self.eat(jack!(SYMBOL:",")) {
-                Some(s) => s,
+            match self.eat(jack!(SYMBOL:",")) {
+                Some(_) => {},
                 None => {break}
             };
             //expression
             self.compile_expression();
-            nArgs += 1;
+            n_args += 1;
         }
-        return nArgs;
+        return n_args;
     }
 
     fn compile_subroutine_call(&mut self) {
@@ -1282,8 +1279,8 @@ impl JackAnalyzer {
                 //this must be a method in current class
                 let function_name = format!("{}.{}", self.class_name, function_name);
                 self.write_push_this();
-                let nArgs = self.compile_expression_list();
-                self.write_call(&function_name, nArgs + 1);
+                let n_args = self.compile_expression_list();
+                self.write_call(&function_name, n_args + 1);
                 self.eat(jack!(SYMBOL:")")).unwrap();
             },
             TokenType::SYMBOL(ref s) if s == "." => {
@@ -1302,17 +1299,17 @@ impl JackAnalyzer {
 
                 self.eat(jack!(SYMBOL:"(")).unwrap();
 
-                let mut nArgs = 0; 
+                let mut n_args: u32;
                 if is_method {
                     //push var's this pointer to stack as argument 0
                     self.write_push(&var_info);
-                    nArgs = self.compile_expression_list();
-                    nArgs += 1;
+                    n_args = self.compile_expression_list();
+                    n_args += 1;
                 } else {
-                    nArgs = self.compile_expression_list();
+                    n_args = self.compile_expression_list();
                 }
 
-                self.write_call(&function_name, nArgs);
+                self.write_call(&function_name, n_args);
 
                 self.eat(jack!(SYMBOL:")")).unwrap();
             },
