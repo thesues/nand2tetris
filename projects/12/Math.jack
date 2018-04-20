@@ -54,18 +54,9 @@ class Math {
      *  program's code, it handles it by invoking this method. In other words,
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
+    //no overflow, no signed 
     function int multiply(int x, int y) {
         var int sum, shiftedX, i;
-        var bool is_negtive;
-
-        if ( ((x<0) & (y>0)) | ((x>0) & (y<0)) ) {
-            let is_negtive = true;
-        } else {
-            let is_negtive = false;
-        }
-
-        let x = Math.abs(x);
-        let y = Math.abs(y);
 
         let i = 0;
         let shiftedX = x;
@@ -76,11 +67,7 @@ class Math {
             let shiftedX = shiftedX + shiftedX;
 	        let i = i + 1;
         }
-        if (is_negtive = true) {
-            return -sum;
-        } else {
-            return sum;
-        }
+	return sum;
     }
 
     /** Returns the integer part of x/y.
@@ -100,7 +87,7 @@ class Math {
     function int do_divide(int x, int y) {
         var int q;
 
-        if(x < y) {return 0;}
+        if((x < y) | (y < 0)) {return 0;}
 
         let q = Math.do_divide(x, y + y);
 
