@@ -9,7 +9,7 @@ import (
 )
 
 type actionListener struct {
-	*parser.BaseJackListener
+	parser.BaseJackListener
 }
 
 func getTokenType(t antlr.Token) string {
@@ -168,7 +168,7 @@ func main() {
 	p := parser.NewJackParser(tokens)
 
 	// Finally parse the expression
-	var listener actionListener
+	listener := actionListener{}
 	//antlr.ParseTreeWalkerDefault.Walk(&listener, p.Clazz())
 	antlr.ParseTreeWalkerDefault.Walk(&listener, p.Expression())
 }
